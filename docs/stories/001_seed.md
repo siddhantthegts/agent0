@@ -1,5 +1,7 @@
 # User Story: Single-Tool Code Agent with E2B Sandbox (Mastra)
 
+> **Note**: This is the original user story. The actual implementation diverged from the skills module approach described here. Instead, we document APIs directly in the system prompt and let the agent write raw fetch calls. See `docs/context.md` for the current implementation.
+
 ## Title
 
 Build a minimal “one-tool” code agent that plans → writes TypeScript → executes inside an E2B sandbox and uses in-prompt skills to call external APIs—without adding extra tool-calling round-trips.

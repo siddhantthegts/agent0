@@ -19,10 +19,9 @@
 ```
 Host (Node.js + Mastra)
 ├── Code Agent
-│   ├── System Prompt (rules + skill docs)
+│   ├── System Prompt (rules + api docs)
 │   └── Single Tool: exec_ts
 │       └── E2B Sandbox (isolated)
-│           ├── Skills Module (injected as virtual import)
 │           ├── User Files (mounted)
 │           ├── Env Vars (secrets)
 │           └── TypeScript Runtime
@@ -46,10 +45,11 @@ Host (Node.js + Mastra)
    - Returns `{ stdout, stderr, files, result, error }`
    - Timeout: 30s (includes npm install time)
    - Logs summary (dependencies, files, args) and performance metrics (sandbox creation, dependency install, code execution, total time)
+   - Performance observations: sandbox ~600ms, install ~3s (2 deps) or ~2s (1 dep), execution ~2s, total ~6-7s average
 
 3. **System Prompt** (`src/mastra/agents/agent0.ts`)
    - Documents exec_ts parameters (code, dependencies, files, args)
-   - Lists recommended pnpm packages (axios, cheerio, zod, etc.)
+   - Lists recommended npm packages (axios, cheerio, zod, etc.)
    - Documents available APIs (Brave Search, etc.) with examples
    - Shows code patterns with and without dependencies
    - Example result format so agent knows what to expect
@@ -157,15 +157,11 @@ agent0/
 │   │   │   └── agent0.ts       # Main agent (system prompt with API docs)
 │   │   ├── tools/
 │   │   │   └── exec_ts.ts      # E2B wrapper
-│   │   ├── skills/
-│   │   │   └── index.ts        # DEPRECATED - not used anymore
 │   │   └── index.ts            # Mastra config
 ├── package.json
 ├── README.md
 └── .env.example                # Required env vars
 ```
-
-**Note**: The `skills/` directory is kept for reference but no longer used. Agent writes raw fetch calls instead of importing skill abstractions.
 
 ## Dependencies
 
@@ -230,14 +226,13 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 ## What Works
 
 1. ✅ Single-tool architecture with `exec_ts`
-2. ✅ Skills module injected as virtual import
-3. ✅ Code generation following system prompt rules
-4. ✅ E2B sandbox integration with timeout
-5. ✅ Secrets via env vars
-6. ✅ File persistence across steps
-7. ✅ Agent memory with LibSQL (local) / Postgres (production)
-8. ✅ Semantic recall for conversation context
-9. ✅ Performance metrics (sandbox creation, install, execution times)
+2. ✅ Code generation following system prompt rules
+3. ✅ E2B sandbox integration with timeout
+4. ✅ Secrets via env vars
+5. ✅ File persistence across steps
+6. ✅ Agent memory with LibSQL (local) / Postgres (production)
+7. ✅ Semantic recall for conversation context
+8. ✅ Performance metrics (sandbox creation, install, execution times)
 
 ## Known Limitations & Future Improvements
 
@@ -272,7 +267,6 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
    - Add examples of good/bad code to system prompt
 
 4. **Testing**
-   - Unit tests for skills module
    - Integration tests for exec_ts tool
    - End-to-end tests for AC1-AC5
    - Performance benchmarks
@@ -406,6 +400,6 @@ when taking over this project:
 
 ---
 
-**last updated**: switched to openrouter/grok, switched to pnpm, lowercase all comments and logs  
-**project phase**: mvp complete + memory + package support  
+**last updated**: removed skills module references, added performance metrics, cleaned up docs  
+**project phase**: mvp complete + memory + package support + performance monitoring  
 **next milestone**: add more api/package documentation, dependency caching, production hardening
