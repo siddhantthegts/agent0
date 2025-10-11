@@ -54,16 +54,9 @@ open playground at http://localhost:4111, select agent0, start chatting.
 
 - "give me the top 5 news from germany today and the weather in berlin"
 
-## how it works
+## APIs
 
-**knowledge in prompt, not code**:
-
-- APIs documented with endpoints + return types
-- npm packages listed (axios, cheerio, rss-parser, etc.)
-- agent figures out implementation
-- sees errors → self-corrects → succeeds
-
-## APIs (adapt these)
+(adapt these)
 
 we include these as examples to show you how it works. replace them with APIs your agent needs:
 
@@ -80,9 +73,14 @@ we include these as examples to show you how it works. replace them with APIs yo
 **Returns**: { data: { field1, field2 } }
 ```
 
-agent reads this, understands the API, writes code to use it. no code changes needed on our side.
+agent reads this, understands the API, writes code to use it. no code changes needed on our side. so provide the stuff that you think is the most important.
 
-## reusable utilities (optional)
+> [!TIP]
+> if it still does not work, then provide all the context for the given thing it is not doing correctly or switch to a smarter model.
+
+## reusable utilities
+
+(optional)
 
 if you have domain-specific helpers that the agent uses repeatedly (data schemas, validators, parsers), mount them instead of having the agent rewrite them every time:
 
