@@ -52,7 +52,9 @@ open playground at http://localhost:4111, select agent0, start chatting.
 
 **try these prompts:**
 
-- "give me the top 5 news from germany today and the weather in berlin"
+> give me the top 5 news from germany today and the weather in berlin
+
+> show me the breaking 5 news from sf of today, the weather in berlin right now, and tell me what time it is in tokyo right now in relation to pt
 
 ## APIs
 
