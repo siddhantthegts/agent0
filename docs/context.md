@@ -38,13 +38,14 @@ Host (Node.js + Mastra)
 
 2. **exec_ts Tool** (`src/mastra/tools/exec_ts.ts`)
    - Creates E2B sandbox per execution
-   - Installs pnpm dependencies on demand (e.g., `["axios", "cheerio"]`)
+   - Installs npm dependencies on demand (e.g., `["axios", "cheerio"]`)
    - Mounts user files if provided
    - Passes API keys via env vars (any key ending in `_API_KEY` or starting with `API_KEY_` or `BASE_URL_`)
    - Executes TypeScript with Node.js runtime
    - Captures stdout/stderr, extracts JSON result
    - Returns `{ stdout, stderr, files, result, error }`
-   - Timeout: 30s (includes pnpm install time)
+   - Timeout: 30s (includes npm install time)
+   - Logs summary (dependencies, files, args) and performance metrics (sandbox creation, dependency install, code execution, total time)
 
 3. **System Prompt** (`src/mastra/agents/agent0.ts`)
    - Documents exec_ts parameters (code, dependencies, files, args)
@@ -76,14 +77,14 @@ The agent must follow these rules:
 
 ### Available Packages & APIs (documented in prompt)
 
-**pnpm Packages:**
+**npm Packages:**
 
 - HTTP: `axios`, native fetch
 - Scraping: `cheerio`, `jsdom`
 - Data: `zod`, `csv-parse`, `xml2js`
 - Utils: `date-fns` (formatting only), `lodash`
 
-**note:** for timezones, agent uses native `Intl.DateTimeFormat` instead of date-fns-tz (v2.0 breaking changes)
+**note:** sandbox uses npm (e2b default). for timezones, agent uses native `Intl.DateTimeFormat` instead of date-fns-tz (v2.0 breaking changes)
 
 **APIs:**
 
@@ -93,7 +94,7 @@ The agent must follow these rules:
 **exec_ts Parameters:**
 
 - `code`: TypeScript program (required)
-- `dependencies`: pnpm packages to install (optional)
+- `dependencies`: npm packages to install (optional)
 - `files`: files to mount (optional)
 - `args`: arguments via process.env.ARGS_JSON (optional)
 
@@ -117,7 +118,7 @@ The agent must follow these rules:
 const sbx = await Sandbox.create({ timeoutMs: 30000 });
 
 // 3. Install dependencies
-await sbx.commands.run("pnpm install axios");
+await sbx.commands.run("npm install axios");
 
 // 4. Pass API keys via env vars
 const envVars = {
@@ -159,7 +160,6 @@ agent0/
 │   │   ├── skills/
 │   │   │   └── index.ts        # DEPRECATED - not used anymore
 │   │   └── index.ts            # Mastra config
-│   └── demo.ts                 # AC1-AC3 tests
 ├── package.json
 ├── README.md
 └── .env.example                # Required env vars
@@ -235,9 +235,9 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 4. ✅ E2B sandbox integration with timeout
 5. ✅ Secrets via env vars
 6. ✅ File persistence across steps
-7. ✅ Demo script testing AC1-AC3
-8. ✅ Agent memory with LibSQL (local) / Postgres (production)
-9. ✅ Semantic recall for conversation context
+7. ✅ Agent memory with LibSQL (local) / Postgres (production)
+8. ✅ Semantic recall for conversation context
+9. ✅ Performance metrics (sandbox creation, install, execution times)
 
 ## Known Limitations & Future Improvements
 
@@ -249,13 +249,13 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 4. **Observability**: Telemetry disabled (deprecated); relying on default observability only
 5. **Memory Embeddings**: No embedder configured; semantic recall uses default (may need custom embedder for production)
 6. **File Persistence**: Files only persist within a single execution; need mechanism for cross-execution file storage
-7. **Dependency Caching**: pnpm install runs on every execution; E2B supports caching but not implemented
+7. **Dependency Caching**: npm install runs on every execution; E2B supports caching but not implemented
 
 ### Improvements Needed
 
 1. **Documentation (System Prompt)**
    - Add more APIs: GitHub, OpenAI, Anthropic, etc.
-   - Document more pnpm packages for common tasks
+   - Document more npm packages for common tasks
    - Include rate limits and error handling patterns
    - Add pagination examples
    - Document response schemas more thoroughly
@@ -278,10 +278,11 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
    - Performance benchmarks
 
 5. **Developer Experience**
-   - Add `pnpm run test` with actual tests
+   - Add `pnpm run test` with actual tests (local dev uses pnpm, sandbox uses npm)
    - Add hot reload for agent code changes
    - Add interactive REPL mode
    - Better error messages from sandbox
+   - Performance metrics already added (sandbox creation, install, execution times)
 
 ## Things That Went Wrong (Lessons Learned)
 
@@ -317,12 +318,11 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 
 - code agent generates valid typescript
 - e2b sandbox executes code successfully
-- skills module provides http, search, kv, fs, logging
-- demo script validates ac1-ac3
 - secrets management via env vars
 - file persistence across steps
 - memory with automatic local/production switching
 - conversation history with semantic recall
+- performance metrics logging
 
 ### Next Steps (if continuing)
 
@@ -330,8 +330,7 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 2. add persistent kv store (redis/upstash)
 3. add url allowlist for security
 4. write comprehensive tests
-5. add more example tasks to demo
-6. improve error handling and retries
+5. improve error handling and retries
 
 ### Migration Notes for Future Agents
 
@@ -340,7 +339,7 @@ when taking over this project:
 1. read this file first for context
 2. check `docs/stories/` for original requirements
 3. review `readme.md` for setup instructions
-4. run `pnpm run demo` to verify working state
+4. run `pnpm dev` and test via playground at http://localhost:4111
 5. agent name is `agent0`, using openrouter model `x-ai/grok-code-fast-1`
 6. system prompt in `agent0.ts` is critical - contains all api documentation
 7. add new apis by documenting them in the prompt with examples
@@ -358,7 +357,7 @@ when taking over this project:
 
 ### Adding a New Recommended Package
 
-1. add package to "recommended pnpm packages" section in system prompt
+1. add package to "recommended npm packages" section in system prompt
 2. include brief description of what it's used for
 3. optionally add example usage pattern
 4. agent will automatically include it in `dependencies` array when needed

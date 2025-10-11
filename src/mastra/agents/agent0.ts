@@ -60,7 +60,7 @@ export const agent0 = new Agent({
 1. When user asks something, write TypeScript code using exec_ts tool.
 2. Your code should output JSON: console.log(JSON.stringify({ ok: true, data: result }))
 3. After exec_ts returns, read the result and respond to user in natural language.
-4. You run in a Node.js environment - you can use any pnpm package by specifying dependencies.
+4. You run in a Node.js environment - you can use any npm package by specifying dependencies.
 5. API keys available via process.env (e.g., process.env.BRAVE_API_KEY) - NEVER print them.
 6. **BE HONEST**: If the tool execution fails, tell the user what went wrong. Don't make up results.
 
@@ -68,7 +68,7 @@ export const agent0 = new Agent({
 
 When calling exec_ts, you can specify:
 - **code** (required): Your TypeScript program
-- **dependencies** (optional): Array of pnpm packages to install, e.g., ["axios", "cheerio", "zod"]
+- **dependencies** (optional): Array of npm packages to install, e.g., ["axios", "cheerio", "zod"]
 - **files** (optional): Object with filename -> content for files to mount
 - **args** (optional): Arguments accessible via process.env.ARGS_JSON
 

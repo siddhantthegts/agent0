@@ -12,19 +12,19 @@ export interface ExecResult {
 
 /**
  * exec_ts - the one tool for code execution
- * runs typescript in e2b sandbox with pnpm packages installed on demand
+ * runs typescript in e2b sandbox with npm packages installed on demand
  */
 export const exec_ts = createTool({
   id: "exec_ts",
   description:
-    "execute typescript code in an e2b sandbox. specify pnpm dependencies to install. api keys accessible via process.env. always output result as json.stringify() to stdout.",
+    "execute typescript code in an e2b sandbox. specify npm dependencies to install. api keys accessible via process.env. always output result as json.stringify() to stdout.",
   inputSchema: z.object({
     code: z.string().describe("complete typescript program to execute"),
     dependencies: z
       .array(z.string())
       .optional()
       .describe(
-        "pnpm packages to install before execution (e.g., ['axios', 'cheerio'])"
+        "npm packages to install before execution (e.g., ['axios', 'cheerio'])"
       ),
     files: z
       .record(z.string())
@@ -63,25 +63,31 @@ async function executeTypeScript(
   args?: any
 ): Promise<ExecResult> {
   let sbx: Sandbox | null = null;
+  const startTime = Date.now();
 
-  // log the full tool call for debugging
+  // log tool call summary
   console.log("\n=== exec_ts call ===");
   console.log("dependencies:", dependencies || "none");
   console.log("files:", files ? Object.keys(files) : "none");
   console.log("args:", args || "none");
-  console.log("code:\n", code);
   console.log("========================\n");
 
   try {
     // create e2b sandbox with timeout
+    const sandboxStartTime = Date.now();
     sbx = await Sandbox.create({
       timeoutMs: 30000, // 30s hard limit (increased for npm install)
     });
+    const sandboxDuration = Date.now() - sandboxStartTime;
+    console.log(`sandbox created in ${sandboxDuration}ms`);
 
     // install dependencies if provided (using npm - e2b sandboxes have npm by default)
     if (dependencies && dependencies.length > 0) {
+      const installStartTime = Date.now();
       const packages = dependencies.join(" ");
       await sbx.commands.run(`npm install ${packages}`);
+      const installDuration = Date.now() - installStartTime;
+      console.log(`dependencies installed in ${installDuration}ms`);
     }
 
     // write any provided files
@@ -111,10 +117,13 @@ async function executeTypeScript(
     }
 
     // execute the typescript code
+    const execStartTime = Date.now();
     const execution = await sbx.runCode(code, {
       language: "ts",
       envs: envVars,
     });
+    const execDuration = Date.now() - execStartTime;
+    console.log(`code executed in ${execDuration}ms`);
 
     // collect stdout/stderr
     const stdout = execution.logs.stdout.join("");
@@ -136,7 +145,7 @@ async function executeTypeScript(
       // not json, that's okay
     }
 
-    // read back any files that were written (exclude system/pnpm files)
+    // read back any files that were written (exclude system/npm files)
     const outputFiles: Record<string, string> = {};
     const excludeFiles = [
       ".bashrc",
@@ -163,6 +172,9 @@ async function executeTypeScript(
       // ignore file listing errors
     }
 
+    const totalDuration = Date.now() - startTime;
+    console.log(`total execution time: ${totalDuration}ms\n`);
+
     return {
       stdout,
       stderr,
@@ -171,6 +183,9 @@ async function executeTypeScript(
       error,
     };
   } catch (err: any) {
+    const totalDuration = Date.now() - startTime;
+    console.log(`total execution time (error): ${totalDuration}ms\n`);
+
     return {
       stdout: "",
       stderr: err.message || "unknown error",
