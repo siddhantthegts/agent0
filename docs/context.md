@@ -30,25 +30,25 @@ Host (Node.js + Mastra)
 
 ### Components
 
-1. **Code Agent** (`src/mastra/agents/code-agent.ts`)
-   - Groq LLM (openai/gpt-oss-20b)
-   - System prompt with strict rules (no prose, only TS)
-   - Single tool: `execTsTool`
+1. **Code Agent** (`src/mastra/agents/agent0.ts`)
+   - OpenRouter LLM (x-ai/grok-code-fast-1)
+   - System prompt with API documentation and examples
+   - Single tool: `exec_ts`
    - Memory: LibSQL (local dev) or Postgres (production)
 
-2. **exec_ts Tool** (`src/mastra/tools/exec-ts-tool.ts`)
+2. **exec_ts Tool** (`src/mastra/tools/exec_ts.ts`)
    - Creates E2B sandbox per execution
-   - Installs npm dependencies on demand (e.g., `["axios", "cheerio"]`)
+   - Installs pnpm dependencies on demand (e.g., `["axios", "cheerio"]`)
    - Mounts user files if provided
    - Passes API keys via env vars (any key ending in `_API_KEY` or starting with `API_KEY_` or `BASE_URL_`)
    - Executes TypeScript with Node.js runtime
    - Captures stdout/stderr, extracts JSON result
    - Returns `{ stdout, stderr, files, result, error }`
-   - Timeout: 30s (includes npm install time)
+   - Timeout: 30s (includes pnpm install time)
 
-3. **System Prompt** (`src/mastra/agents/code-agent.ts`)
+3. **System Prompt** (`src/mastra/agents/agent0.ts`)
    - Documents exec_ts parameters (code, dependencies, files, args)
-   - Lists recommended npm packages (axios, cheerio, zod, etc.)
+   - Lists recommended pnpm packages (axios, cheerio, zod, etc.)
    - Documents available APIs (Brave Search, etc.) with examples
    - Shows code patterns with and without dependencies
    - Example result format so agent knows what to expect
@@ -76,12 +76,14 @@ The agent must follow these rules:
 
 ### Available Packages & APIs (documented in prompt)
 
-**NPM Packages:**
+**pnpm Packages:**
 
 - HTTP: `axios`, native fetch
 - Scraping: `cheerio`, `jsdom`
 - Data: `zod`, `csv-parse`, `xml2js`
-- Utils: `date-fns`, `lodash`
+- Utils: `date-fns` (formatting only), `lodash`
+
+**note:** for timezones, agent uses native `Intl.DateTimeFormat` instead of date-fns-tz (v2.0 breaking changes)
 
 **APIs:**
 
@@ -91,7 +93,7 @@ The agent must follow these rules:
 **exec_ts Parameters:**
 
 - `code`: TypeScript program (required)
-- `dependencies`: npm packages to install (optional)
+- `dependencies`: pnpm packages to install (optional)
 - `files`: files to mount (optional)
 - `args`: arguments via process.env.ARGS_JSON (optional)
 
@@ -115,7 +117,7 @@ The agent must follow these rules:
 const sbx = await Sandbox.create({ timeoutMs: 30000 });
 
 // 3. Install dependencies
-await sbx.commands.run("npm install axios");
+await sbx.commands.run("pnpm install axios");
 
 // 4. Pass API keys via env vars
 const envVars = {
@@ -151,9 +153,9 @@ agent0/
 ├── src/
 │   ├── mastra/
 │   │   ├── agents/
-│   │   │   └── code-agent.ts   # Main agent (system prompt with API docs)
+│   │   │   └── agent0.ts       # Main agent (system prompt with API docs)
 │   │   ├── tools/
-│   │   │   └── exec-ts-tool.ts # E2B wrapper
+│   │   │   └── exec_ts.ts      # E2B wrapper
 │   │   ├── skills/
 │   │   │   └── index.ts        # DEPRECATED - not used anymore
 │   │   └── index.ts            # Mastra config
@@ -170,7 +172,7 @@ agent0/
 ### Core
 
 - `@mastra/core` - Agent framework
-- `@ai-sdk/groq` - LLM provider
+- `@openrouter/ai-sdk-provider` - LLM provider (OpenRouter)
 - `@e2b/code-interpreter` - Sandboxed code execution
 
 ### Storage & Logging
@@ -189,9 +191,9 @@ agent0/
 Required in `.env`:
 
 ```bash
-E2B_API_KEY=...        # E2B sandbox API key
-GROQ_API_KEY=...       # Groq LLM API key
-NODE_ENV=development   # Environment (development/production)
+E2B_API_KEY=...           # E2B sandbox API key
+OPENROUTER_API_KEY=...    # OpenRouter LLM API key
+NODE_ENV=development      # Environment (development/production)
 ```
 
 Optional (passed through to sandbox):
@@ -247,13 +249,13 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 4. **Observability**: Telemetry disabled (deprecated); relying on default observability only
 5. **Memory Embeddings**: No embedder configured; semantic recall uses default (may need custom embedder for production)
 6. **File Persistence**: Files only persist within a single execution; need mechanism for cross-execution file storage
-7. **Dependency Caching**: npm install runs on every execution; E2B supports caching but not implemented
+7. **Dependency Caching**: pnpm install runs on every execution; E2B supports caching but not implemented
 
 ### Improvements Needed
 
 1. **Documentation (System Prompt)**
    - Add more APIs: GitHub, OpenAI, Anthropic, etc.
-   - Document more npm packages for common tasks
+   - Document more pnpm packages for common tasks
    - Include rate limits and error handling patterns
    - Add pagination examples
    - Document response schemas more thoroughly
@@ -276,7 +278,7 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
    - Performance benchmarks
 
 5. **Developer Experience**
-   - Add `npm run test` with actual tests
+   - Add `pnpm run test` with actual tests
    - Add hot reload for agent code changes
    - Add interactive REPL mode
    - Better error messages from sandbox
@@ -285,27 +287,27 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 
 ### Issue 1: Skills Module Over-Engineering
 
-**Problem**: Created abstraction layer with "skills" module that just wrapped fetch anyway  
-**Solution**: Removed skills injection; document APIs in system prompt; let agent write raw fetch  
-**Lesson**: Provide knowledge/examples in prompt, not code abstractions. Let the agent use native APIs.
+**Problem**: created abstraction layer with "skills" module that just wrapped fetch anyway  
+**Solution**: removed skills injection; document apis in system prompt; let agent write raw fetch  
+**Lesson**: provide knowledge/examples in prompt, not code abstractions. let the agent use native apis.
 
 ### Issue 2: Result Extraction
 
-**Problem**: Parsing JSON from stdout was fragile with mixed output  
-**Solution**: Instruct agent to output single JSON at end; use regex to extract  
-**Lesson**: System prompt must be explicit about output format
+**Problem**: parsing json from stdout was fragile with mixed output  
+**Solution**: instruct agent to output single json at end; use regex to extract  
+**Lesson**: system prompt must be explicit about output format
 
 ### Issue 3: File Persistence
 
-**Problem**: Files written in sandbox weren't accessible across steps  
-**Solution**: Return files in tool output; agent must re-read via `fs.readFile`  
-**Lesson**: Sandbox is ephemeral; persistence requires explicit file tracking
+**Problem**: files written in sandbox weren't accessible across steps  
+**Solution**: return files in tool output; agent must re-read via `fs.readFile`  
+**Lesson**: sandbox is ephemeral; persistence requires explicit file tracking
 
 ### Issue 4: Secrets in Output
 
-**Problem**: Risk of agent printing env vars  
-**Solution**: Strong system prompt rule + redaction in logs  
-**Lesson**: Defense in depth: prevent generation + filter output
+**Problem**: risk of agent printing env vars  
+**Solution**: strong system prompt rule + redaction in logs  
+**Lesson**: defense in depth: prevent generation + filter output
 
 ## State of the Project (Current)
 
@@ -313,98 +315,98 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 
 ### What's Working
 
-- Code agent generates valid TypeScript
-- E2B sandbox executes code successfully
-- Skills module provides HTTP, search, KV, FS, logging
-- Demo script validates AC1-AC3
-- Secrets management via env vars
-- File persistence across steps
-- Memory with automatic local/production switching
-- Conversation history with semantic recall
+- code agent generates valid typescript
+- e2b sandbox executes code successfully
+- skills module provides http, search, kv, fs, logging
+- demo script validates ac1-ac3
+- secrets management via env vars
+- file persistence across steps
+- memory with automatic local/production switching
+- conversation history with semantic recall
 
 ### Next Steps (if continuing)
 
-1. Add proper search API (Brave/Perplexity)
-2. Add persistent KV store (Redis/Upstash)
-3. Add URL allowlist for security
-4. Write comprehensive tests
-5. Add more example tasks to demo
-6. Improve error handling and retries
+1. add proper search api (brave/perplexity)
+2. add persistent kv store (redis/upstash)
+3. add url allowlist for security
+4. write comprehensive tests
+5. add more example tasks to demo
+6. improve error handling and retries
 
 ### Migration Notes for Future Agents
 
-When taking over this project:
+when taking over this project:
 
-1. Read this file first for context
-2. Check `docs/stories/` for original requirements
-3. Review `README.md` for setup instructions
-4. Run `npm run demo` to verify working state
-5. Agent name is `agent0`, using Groq model `openai/gpt-oss-20b`
-6. System prompt in `code-agent.ts` is critical - contains all API documentation
-7. Add new APIs by documenting them in the prompt with examples
+1. read this file first for context
+2. check `docs/stories/` for original requirements
+3. review `readme.md` for setup instructions
+4. run `pnpm run demo` to verify working state
+5. agent name is `agent0`, using openrouter model `x-ai/grok-code-fast-1`
+6. system prompt in `agent0.ts` is critical - contains all api documentation
+7. add new apis by documenting them in the prompt with examples
 
 ## Development Workflow
 
 ### Adding a New API
 
-1. Get API documentation (endpoints, auth, example responses)
-2. Add API section to agent system prompt in `code-agent.ts`
-3. Include example TypeScript code (with fetch or recommended package like axios)
-4. Show example response structure
-5. Add API key pattern to env var passthrough in `exec-ts-tool.ts` if needed
-6. Test with agent by asking it to use the new API
+1. get api documentation (endpoints, auth, example responses)
+2. add api section to agent system prompt in `agent0.ts`
+3. include example typescript code (with fetch or recommended package like axios)
+4. show example response structure
+5. add api key pattern to env var passthrough in `exec_ts.ts` if needed
+6. test with agent by asking it to use the new api
 
 ### Adding a New Recommended Package
 
-1. Add package to "Recommended NPM Packages" section in system prompt
-2. Include brief description of what it's used for
-3. Optionally add example usage pattern
-4. Agent will automatically include it in `dependencies` array when needed
+1. add package to "recommended pnpm packages" section in system prompt
+2. include brief description of what it's used for
+3. optionally add example usage pattern
+4. agent will automatically include it in `dependencies` array when needed
 
 ### Debugging Execution
 
-1. Check E2B sandbox logs (stdout/stderr in tool output)
-2. Verify API keys passed correctly via env vars
-3. Look for TypeScript compilation errors
-4. Validate JSON output format
-5. Check network requests in sandbox
+1. check e2b sandbox logs (stdout/stderr in tool output)
+2. verify api keys passed correctly via env vars
+3. look for typescript compilation errors
+4. validate json output format
+5. check network requests in sandbox
 
 ### Modifying Agent Behavior
 
-1. Update system prompt in `code-agent.ts`
-2. Test with simple example first
-3. Verify AC1-AC3 still pass
-4. Update context.md with changes
+1. update system prompt in `agent0.ts`
+2. test with simple example first
+3. verify ac1-ac3 still pass
+4. update context.md with changes
 
 ## Conventions Summary
 
 ### Code Style
 
-- Use TypeScript strict mode
-- Async/await for all I/O
-- Explicit error handling
-- No `any` types without comment
+- use typescript strict mode
+- async/await for all i/o
+- explicit error handling
+- no `any` types without comment
 
 ### File Naming
 
 - `kebab-case.ts` for files
-- `PascalCase` for classes/interfaces
-- `camelCase` for functions/variables
+- `pascalcase` for classes/interfaces
+- `camelcase` for functions/variables
 
 ### Git Commits
 
-- Conventional commits format
-- Reference user story in commit message
-- Keep commits atomic and focused
+- conventional commits format
+- reference user story in commit message
+- keep commits atomic and focused
 
 ### Documentation
 
-- Update context.md for architectural changes
-- Update README.md for user-facing changes
-- Document "why" not just "what"
+- update context.md for architectural changes
+- update readme.md for user-facing changes
+- document "why" not just "what"
 
 ---
 
-**Last Updated**: Added npm dependency support - agent can use any package, documented in prompt  
-**Project Phase**: MVP Complete + Memory + Package Support  
-**Next Milestone**: Add more API/package documentation, dependency caching, production hardening
+**last updated**: switched to openrouter/grok, switched to pnpm, lowercase all comments and logs  
+**project phase**: mvp complete + memory + package support  
+**next milestone**: add more api/package documentation, dependency caching, production hardening

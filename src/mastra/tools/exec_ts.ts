@@ -11,29 +11,29 @@ export interface ExecResult {
 }
 
 /**
- * exec_ts - The ONE tool for code execution
- * Runs TypeScript in E2B sandbox with npm packages installed on demand
+ * exec_ts - the one tool for code execution
+ * runs typescript in e2b sandbox with pnpm packages installed on demand
  */
 export const exec_ts = createTool({
   id: "exec_ts",
   description:
-    "Execute TypeScript code in an E2B sandbox. Specify npm dependencies to install. API keys accessible via process.env. Always output result as JSON.stringify() to stdout.",
+    "execute typescript code in an e2b sandbox. specify pnpm dependencies to install. api keys accessible via process.env. always output result as json.stringify() to stdout.",
   inputSchema: z.object({
-    code: z.string().describe("Complete TypeScript program to execute"),
+    code: z.string().describe("complete typescript program to execute"),
     dependencies: z
       .array(z.string())
       .optional()
       .describe(
-        "NPM packages to install before execution (e.g., ['axios', 'cheerio'])"
+        "pnpm packages to install before execution (e.g., ['axios', 'cheerio'])"
       ),
     files: z
       .record(z.string())
       .optional()
-      .describe("Files to make available in the sandbox"),
+      .describe("files to make available in the sandbox"),
     args: z
       .any()
       .optional()
-      .describe("Arguments to pass to the program via process.argv"),
+      .describe("arguments to pass to the program via process.argv"),
   }),
   outputSchema: z.object({
     stdout: z.string(),
@@ -53,8 +53,8 @@ export const exec_ts = createTool({
 });
 
 /**
- * Core execution function
- * Creates E2B sandbox, installs dependencies, runs code, captures output
+ * core execution function
+ * creates e2b sandbox, installs dependencies, runs code, captures output
  */
 async function executeTypeScript(
   code: string,
@@ -64,37 +64,37 @@ async function executeTypeScript(
 ): Promise<ExecResult> {
   let sbx: Sandbox | null = null;
 
-  // Log the full tool call for debugging
-  console.log("\n=== EXEC_TS TOOL CALL ===");
-  console.log("Dependencies:", dependencies || "none");
-  console.log("Files:", files ? Object.keys(files) : "none");
-  console.log("Args:", args || "none");
-  console.log("Code:\n", code);
+  // log the full tool call for debugging
+  console.log("\n=== exec_ts call ===");
+  console.log("dependencies:", dependencies || "none");
+  console.log("files:", files ? Object.keys(files) : "none");
+  console.log("args:", args || "none");
+  console.log("code:\n", code);
   console.log("========================\n");
 
   try {
-    // Create E2B sandbox with timeout
+    // create e2b sandbox with timeout
     sbx = await Sandbox.create({
       timeoutMs: 30000, // 30s hard limit (increased for npm install)
     });
 
-    // Install npm dependencies if provided
+    // install dependencies if provided (using npm - e2b sandboxes have npm by default)
     if (dependencies && dependencies.length > 0) {
       const packages = dependencies.join(" ");
       await sbx.commands.run(`npm install ${packages}`);
     }
 
-    // Write any provided files
+    // write any provided files
     if (files) {
       for (const [path, content] of Object.entries(files)) {
         await sbx.files.write(`/home/user/${path}`, content);
       }
     }
 
-    // Inject env vars (API keys and secrets)
+    // inject env vars (api keys and secrets)
     const envVars: Record<string, string> = {};
 
-    // Pass through API keys and base URLs
+    // pass through api keys and base urls
     for (const [key, value] of Object.entries(process.env)) {
       if (
         key.endsWith("_API_KEY") ||
@@ -105,38 +105,38 @@ async function executeTypeScript(
       }
     }
 
-    // Inject args if provided
+    // inject args if provided
     if (args) {
       envVars.ARGS_JSON = JSON.stringify(args);
     }
 
-    // Execute the TypeScript code
+    // execute the typescript code
     const execution = await sbx.runCode(code, {
       language: "ts",
       envs: envVars,
     });
 
-    // Collect stdout/stderr
+    // collect stdout/stderr
     const stdout = execution.logs.stdout.join("");
     const stderr = execution.logs.stderr.join("");
 
-    // Try to extract result from stdout (expecting JSON)
+    // try to extract result from stdout (expecting json)
     let result: any = undefined;
     let error: string | undefined = execution.error
       ? JSON.stringify(execution.error, null, 2)
       : undefined;
 
     try {
-      // Look for JSON in stdout
+      // look for json in stdout
       const jsonMatch = stdout.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         result = JSON.parse(jsonMatch[0]);
       }
     } catch (e) {
-      // Not JSON, that's okay
+      // not json, that's okay
     }
 
-    // Read back any files that were written (exclude system/npm files)
+    // read back any files that were written (exclude system/pnpm files)
     const outputFiles: Record<string, string> = {};
     const excludeFiles = [
       ".bashrc",
@@ -146,7 +146,7 @@ async function executeTypeScript(
       "package-lock.json",
     ];
 
-    // List files in working directory
+    // list files in working directory
     try {
       const fileList = await sbx.files.list("/home/user");
       for (const file of fileList) {
@@ -160,7 +160,7 @@ async function executeTypeScript(
         }
       }
     } catch (e) {
-      // Ignore file listing errors
+      // ignore file listing errors
     }
 
     return {
@@ -173,11 +173,11 @@ async function executeTypeScript(
   } catch (err: any) {
     return {
       stdout: "",
-      stderr: err.message || "Unknown error",
-      error: err.message || "Unknown error",
+      stderr: err.message || "unknown error",
+      error: err.message || "unknown error",
     };
   } finally {
-    // Always kill sandbox
+    // always kill sandbox
     if (sbx) {
       await sbx.kill();
     }

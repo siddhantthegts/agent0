@@ -81,5 +81,5 @@ Rules:
 
 ## Definition of Done
 
-- One `npm run demo` starts a local chat, provisions E2B, and completes AC1–AC3.
+- One `pnpm run demo` starts a local chat, provisions E2B, and completes AC1–AC3.
 - Readme shows **one** end-to-end transcript and the system prompt above.

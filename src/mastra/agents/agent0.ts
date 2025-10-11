@@ -10,7 +10,7 @@ const openrouter = createOpenRouter({
 });
 
 /**
- * Memory configuration - switches between local LibSQL and production Postgres
+ * memory configuration - switches between local libsql and production postgres
  */
 const isProduction = process.env.NODE_ENV === "production";
 const usePostgres = process.env.DATABASE_URL && isProduction;
@@ -25,7 +25,7 @@ const memory = usePostgres
       }),
       options: {
         lastMessages: 10,
-        semanticRecall: false, // Disabled - add embedder to enable
+        semanticRecall: false, // disabled - add embedder to enable
       },
     })
   : new Memory({
@@ -37,19 +37,19 @@ const memory = usePostgres
       }),
       options: {
         lastMessages: 10,
-        semanticRecall: false, // Disabled - add embedder to enable
+        semanticRecall: false, // disabled - add embedder to enable
       },
     });
 
 /**
- * Code-mode agent - single tool (exec_ts) for executing TypeScript in E2B sandbox
+ * code-mode agent - single tool (exec_ts) for executing typescript in e2b sandbox
  *
- * This agent follows the "write code, execute, done" pattern:
- * 1. Generate complete TypeScript program
- * 2. Execute once in sandbox
- * 3. Consume results immediately
+ * this agent follows the "write code, execute, done" pattern:
+ * 1. generate complete typescript program
+ * 2. execute once in sandbox
+ * 3. consume results immediately
  *
- * No multi-step tool calling. No prose. Just code.
+ * no multi-step tool calling. no prose. just code.
  */
 export const agent0 = new Agent({
   name: "agent0",
@@ -60,7 +60,7 @@ export const agent0 = new Agent({
 1. When user asks something, write TypeScript code using exec_ts tool.
 2. Your code should output JSON: console.log(JSON.stringify({ ok: true, data: result }))
 3. After exec_ts returns, read the result and respond to user in natural language.
-4. You run in a Node.js environment - you can use any npm package by specifying dependencies.
+4. You run in a Node.js environment - you can use any pnpm package by specifying dependencies.
 5. API keys available via process.env (e.g., process.env.BRAVE_API_KEY) - NEVER print them.
 6. **BE HONEST**: If the tool execution fails, tell the user what went wrong. Don't make up results.
 
@@ -68,7 +68,7 @@ export const agent0 = new Agent({
 
 When calling exec_ts, you can specify:
 - **code** (required): Your TypeScript program
-- **dependencies** (optional): Array of npm packages to install, e.g., ["axios", "cheerio", "zod"]
+- **dependencies** (optional): Array of pnpm packages to install, e.g., ["axios", "cheerio", "zod"]
 - **files** (optional): Object with filename -> content for files to mount
 - **args** (optional): Arguments accessible via process.env.ARGS_JSON
 
@@ -101,8 +101,18 @@ Tool returns:
 - \`rss-parser\` - RSS/XML feed parsing
 
 **Utilities:**
-- \`date-fns\` - Date manipulation
+- \`date-fns\` - Date formatting only (use native Intl for timezones)
 - \`lodash\` - Utility functions
+
+**Timezones:** Use native \`Intl.DateTimeFormat\`:
+\`\`\`typescript
+const now = new Date();
+const ptTime = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Los_Angeles',
+  dateStyle: 'medium',
+  timeStyle: 'long'
+}).format(now);
+\`\`\`
 
 ### Google News RSS
 **Endpoint**: https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en
