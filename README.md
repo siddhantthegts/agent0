@@ -78,48 +78,6 @@ agent reads this, understands the API, writes code to use it. no code changes ne
 > [!TIP]
 > if it still does not work, then provide all the context for the given thing it is not doing correctly or switch to a smarter model.
 
-## reusable utilities
-
-(optional)
-
-if you have domain-specific helpers that the agent uses repeatedly (data schemas, validators, parsers), mount them instead of having the agent rewrite them every time:
-
-**1. create** `utils/validators.ts`:
-
-```typescript
-export function validateEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-```
-
-**2. mount when calling tool**:
-
-```typescript
-import fs from "fs";
-import { execTsTool } from "./mastra/tools/exec_ts.js";
-
-const validators = fs.readFileSync("utils/validators.ts", "utf-8");
-
-await execTsTool.execute({
-  context: {
-    code: `
-      import { validateEmail } from "./validators.ts";
-      console.log(JSON.stringify({ 
-        ok: true, 
-        data: { valid: validateEmail("test@example.com") }
-      }));
-    `,
-    files: { "validators.ts": validators },
-  },
-});
-```
-
-saves tokens, keeps logic consistent across calls.
-
 ---
 
 **this is your foundation. build on it.**
-
-want different APIs? edit the prompt.  
-want different model? change one line.  
-want custom utilities? mount your files.
