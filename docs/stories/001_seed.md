@@ -81,5 +81,5 @@ Rules:
 
 ## Definition of Done
 
-- One `pnpm run demo` starts a local chat, provisions E2B, and completes AC1–AC3.
+- Run `pnpm dev` and test via playground at http://localhost:4111 to verify AC1–AC3.
 - Readme shows **one** end-to-end transcript and the system prompt above.

@@ -7,8 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "mastra dev",
     "build": "mastra build",
-    "start": "mastra start",
-    "demo": "tsx src/demo.ts"
+    "start": "mastra start"
   },
   "keywords": [],
   "license": "Apache-2.0",
