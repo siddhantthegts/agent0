@@ -139,9 +139,9 @@ await sbx.close();
 
 ### File Management
 
-- **Session Files**: Tracked in-memory during execution
-- **Persistence**: Files written via `fs.writeFile` returned in tool output
-- **Cross-Step**: Agent can save helpers to `helpers.ts`, read back later
+- **Within Execution**: Files written via `fs.writeFile` are returned in tool output
+- **Limitation**: Files don't persist across conversations/executions
+- **Workaround**: Agent can re-emit helper code in each conversation if needed
 
 ## Project Structure
 
@@ -215,23 +215,15 @@ The agent uses **LibSQL** (file-based SQLite) for local development and **Postgr
 
 The memory configuration automatically switches based on `NODE_ENV` and presence of `DATABASE_URL`.
 
-## Acceptance Criteria (from User Story)
-
-- **AC1**: Agent emits TS that calls `http.request`, parses JSON, summarizes, prints to stdout ✅
-- **AC2**: Agent creates helper (e.g., `extractLinks`), saves to file, reuses in later step ✅
-- **AC3**: Secrets read from `process.env`, never printed ✅
-- **AC4**: Quota breach returns controlled error (timeout/CPU) - ⚠️ E2B handles this
-- **AC5**: Runs locally with Mastra + E2B, no Cloudflare required ✅
-
 ## What Works
 
 1. ✅ Single-tool architecture with `exec_ts`
 2. ✅ Code generation following system prompt rules
 3. ✅ E2B sandbox integration with timeout
 4. ✅ Secrets via env vars
-5. ✅ File persistence across steps
+5. ✅ File output within single execution (files don't persist across conversations)
 6. ✅ Agent memory with LibSQL (local) / Postgres (production)
-7. ✅ Semantic recall for conversation context
+7. ✅ Conversation history with semantic recall
 8. ✅ Performance metrics (sandbox creation, install, execution times)
 
 ## Known Limitations & Future Improvements
@@ -268,7 +260,7 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 
 4. **Testing**
    - Integration tests for exec_ts tool
-   - End-to-end tests for AC1-AC5
+   - End-to-end tests for core functionality
    - Performance benchmarks
 
 5. **Developer Experience**
@@ -294,9 +286,9 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 
 ### Issue 3: File Persistence
 
-**Problem**: files written in sandbox weren't accessible across steps  
-**Solution**: return files in tool output; agent must re-read via `fs.readFile`  
-**Lesson**: sandbox is ephemeral; persistence requires explicit file tracking
+**Problem**: files written in sandbox aren't accessible across conversations  
+**Solution**: files are returned in tool output but only exist for single execution  
+**Lesson**: sandbox is ephemeral; cross-conversation persistence not implemented (would need external storage)
 
 ### Issue 4: Secrets in Output
 
@@ -313,7 +305,7 @@ The memory configuration automatically switches based on `NODE_ENV` and presence
 - code agent generates valid typescript
 - e2b sandbox executes code successfully
 - secrets management via env vars
-- file persistence across steps
+- file output within single execution
 - memory with automatic local/production switching
 - conversation history with semantic recall
 - performance metrics logging
@@ -368,7 +360,7 @@ when taking over this project:
 
 1. update system prompt in `agent0.ts`
 2. test with simple example first
-3. verify ac1-ac3 still pass
+3. verify core functionality still works
 4. update context.md with changes
 
 ## Conventions Summary
